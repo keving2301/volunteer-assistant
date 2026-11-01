@@ -7,6 +7,10 @@ import type { Role } from '../../shared/types'
 
 export const COOKIE_NAME = '__Host-vas_session'
 
+/** Readable by the page and holds nothing secret: it only tells the app a session may exist, so a signed-out visitor
+ * sees the sign-in form at once instead of waiting for the API to say so. */
+export const HINT_COOKIE_NAME = 'vas_signed_in'
+
 export interface SessionPayload {
   /** Format version, so a future change can reject old cookies. */
   v: 1
@@ -76,6 +80,15 @@ export function sessionCookie(token: string, maxAgeSeconds: number): string {
 
 export function clearedSessionCookie(): string {
   return `${COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`
+}
+
+export function hintCookie(maxAgeSeconds: number): string {
+  return `${HINT_COOKIE_NAME}=1; Path=/; Secure; SameSite=Lax; Max-Age=${Math.max(0, Math.floor(maxAgeSeconds))}`
+}
+
+/** Both cookies cleared, for sign-out and for a session the server no longer accepts. */
+export function clearedCookies(): string[] {
+  return [clearedSessionCookie(), `${HINT_COOKIE_NAME}=; Path=/; Secure; SameSite=Lax; Max-Age=0`]
 }
 
 export function readCookie(header: string | null, name: string): string | null {

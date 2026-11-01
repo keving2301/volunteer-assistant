@@ -20,11 +20,10 @@ const BASE_HEADERS = {
   'cache-control': 'no-store',
 }
 
-export function json(status: number, body: unknown, headers: Record<string, string> = {}): Response {
-  return new Response(status === 204 ? null : JSON.stringify(body), {
-    status,
-    headers: { ...BASE_HEADERS, ...headers },
-  })
+export function json(status: number, body: unknown, cookies: string[] = []): Response {
+  const headers = new Headers(BASE_HEADERS)
+  for (const cookie of cookies) headers.append('set-cookie', cookie)
+  return new Response(status === 204 ? null : JSON.stringify(body), { status, headers })
 }
 
 export function errorResponse(error: unknown): Response {

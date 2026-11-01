@@ -27,10 +27,10 @@ import {
   teamUpdateSchema,
   volunteerInputSchema,
 } from '../../shared/validation'
-import { issueSessionCookie, readSession, requireSession, sessionInfo } from './auth'
+import { issueSessionCookies, readSession, requireSession, sessionInfo } from './auth'
 import { firestore } from './firestore'
 import { HttpError, assertSameOrigin, errorResponse, json, parse, readJson } from './http'
-import { COOKIE_NAME, clearedSessionCookie, readCookie, type SessionPayload } from './session'
+import { COOKIE_NAME, clearedCookies, readCookie, type SessionPayload } from './session'
 import {
   assertRoom,
   col,
@@ -105,7 +105,7 @@ async function getSession(ctx: Ctx) {
 async function switchRole(ctx: Ctx) {
   const { role } = parse(roleInputSchema, await body(ctx))
   const info = await sessionInfo(ctx.db, ctx.workspaceId, ctx.meta, role)
-  return json(200, info, { 'set-cookie': issueSessionCookie(ctx.workspaceId, role, ctx.meta, ctx.now) })
+  return json(200, info, issueSessionCookies(ctx.workspaceId, role, ctx.meta, ctx.now))
 }
 
 // Semesters
@@ -525,7 +525,7 @@ async function signOut(req: Request, db: () => Firestore, now: Date): Promise<Re
   if (session) {
     await deleteWorkspace(db(), session.w).catch((error) => console.error('Could not delete workspace', error))
   }
-  return json(204, null, { 'set-cookie': clearedSessionCookie() })
+  return json(204, null, clearedCookies())
 }
 
 export interface ApiOptions {
@@ -560,7 +560,7 @@ export async function handleApi(req: Request, options: ApiOptions = {}): Promise
   } catch (error) {
     const response = errorResponse(error)
     if (error instanceof HttpError && error.status === 401) {
-      response.headers.append('set-cookie', clearedSessionCookie())
+      for (const cookie of clearedCookies()) response.headers.append('set-cookie', cookie)
     }
     return response
   }

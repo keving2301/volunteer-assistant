@@ -36,8 +36,9 @@ Volunteer
 
 ## Demo access
 
-The sign-in page has one button per role. Each sign-in creates a private workspace with a fresh copy of the demo data,
-so visitors never see or change each other's data. Workspaces are deleted after 24 hours.
+The sign-in form comes prefilled with the demo coordinator; a Coordinator / Volunteer switch at the top of the form swaps
+in the other account. Each sign-in creates a private workspace with a fresh copy of the demo data, so visitors never see
+or change each other's data. Workspaces are deleted after 24 hours.
 
 | Role | Email | Password |
 |---|---|---|

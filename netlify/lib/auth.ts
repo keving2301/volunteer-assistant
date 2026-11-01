@@ -2,7 +2,15 @@ import type { Firestore } from 'firebase-admin/firestore'
 import { fullName, type Role, type SessionInfo, type Volunteer } from '../../shared/types'
 import { env } from './env'
 import { HttpError } from './http'
-import { COOKIE_NAME, readCookie, sessionCookie, signSession, verifySession, type SessionPayload } from './session'
+import {
+  COOKIE_NAME,
+  hintCookie,
+  readCookie,
+  sessionCookie,
+  signSession,
+  verifySession,
+  type SessionPayload,
+} from './session'
 import { col, getWorkspace, type WorkspaceMeta } from './workspace'
 
 export function sessionSecret(): string {
@@ -21,11 +29,12 @@ export async function requireSession(req: Request, db: Firestore, now = new Date
   return { session, meta, workspaceId: session.w }
 }
 
-/** A Set-Cookie value for this workspace and role. The cookie expires when the workspace does. */
-export function issueSessionCookie(workspaceId: string, role: Role, meta: WorkspaceMeta, now = new Date()): string {
+/** Set-Cookie values for this workspace and role: the signed session and the hint. Both expire with the workspace. */
+export function issueSessionCookies(workspaceId: string, role: Role, meta: WorkspaceMeta, now = new Date()): string[] {
   const exp = Math.floor(meta.expiresAt.toMillis() / 1000)
   const token = signSession({ v: 1, w: workspaceId, r: role, iat: Math.floor(now.getTime() / 1000), exp }, sessionSecret())
-  return sessionCookie(token, exp - Math.floor(now.getTime() / 1000))
+  const maxAge = exp - Math.floor(now.getTime() / 1000)
+  return [sessionCookie(token, maxAge), hintCookie(maxAge)]
 }
 
 export async function sessionInfo(db: Firestore, workspaceId: string, meta: WorkspaceMeta, role: Role): Promise<SessionInfo> {

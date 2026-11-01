@@ -2,7 +2,10 @@ import { createHmac } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
 import {
   COOKIE_NAME,
+  HINT_COOKIE_NAME,
+  clearedCookies,
   clearedSessionCookie,
+  hintCookie,
   readCookie,
   sessionCookie,
   signSession,
@@ -59,6 +62,14 @@ describe('session cookie signing', () => {
     expect(cookie).toBe(`${COOKIE_NAME}=token; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=3600`)
     expect(COOKIE_NAME.startsWith('__Host-')).toBe(true)
     expect(clearedSessionCookie()).toContain('Max-Age=0')
+  })
+
+  it('sets a readable hint cookie that holds nothing secret, and clears both on sign-out', () => {
+    expect(hintCookie(60)).toBe(`${HINT_COOKIE_NAME}=1; Path=/; Secure; SameSite=Lax; Max-Age=60`)
+    expect(hintCookie(60)).not.toContain('HttpOnly')
+    const cleared = clearedCookies()
+    expect(cleared).toHaveLength(2)
+    expect(cleared.every((c) => c.endsWith('Max-Age=0'))).toBe(true)
   })
 
   it('reads one cookie from a Cookie header', () => {

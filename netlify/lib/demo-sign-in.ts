@@ -3,7 +3,7 @@
 
 import { DEMO_ACCOUNTS, demoAccountFor } from '../../shared/demo'
 import { demoSignInSchema } from '../../shared/validation'
-import { issueSessionCookie, readSession, sessionInfo, sessionSecret } from './auth'
+import { issueSessionCookies, readSession, sessionInfo, sessionSecret } from './auth'
 import { firestore } from './firestore'
 import { HttpError, assertSameOrigin, errorResponse, json, parse, readJson } from './http'
 import { createWorkspace, deleteWorkspace, hashIp } from './workspace'
@@ -17,9 +17,7 @@ export async function handleDemoSignIn(req: Request, options: { ip?: string; now
     const account =
       'role' in input ? DEMO_ACCOUNTS.find((a) => a.role === input.role) : demoAccountFor(input.email, input.password)
     if (!account) {
-      throw new HttpError(401, 'invalid_credentials', 'That email and password do not match a demo account.', {
-        fields: { password: 'Use one of the demo accounts shown on this page' },
-      })
+      throw new HttpError(401, 'invalid_credentials', 'That email and password do not match an account.')
     }
 
     const db = firestore()
@@ -29,7 +27,7 @@ export async function handleDemoSignIn(req: Request, options: { ip?: string; now
 
     const { id, meta } = await createWorkspace(db, { ipHash: hashIp(options.ip ?? 'unknown', sessionSecret()), now })
     const info = await sessionInfo(db, id, meta, account.role)
-    return json(201, info, { 'set-cookie': issueSessionCookie(id, account.role, meta, now) })
+    return json(201, info, issueSessionCookies(id, account.role, meta, now))
   } catch (error) {
     return errorResponse(error)
   }
