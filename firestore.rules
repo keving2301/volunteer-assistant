@@ -1,0 +1,11 @@
+rules_version = '2';
+
+// No browser talks to Firestore directly. The Netlify Functions use the Admin SDK with a service account, which these
+// rules do not apply to, and they scope every query to the visitor's signed workspace.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
