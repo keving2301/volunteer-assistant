@@ -55,7 +55,7 @@ export function SignInPage() {
   }
 
   return (
-    <div className="signin">
+    <main className="signin">
       <div className="signin-intro">
         <div className="brand brand-large">
           <BrandMark size={40} />
@@ -125,6 +125,6 @@ export function SignInPage() {
           </button>
         </form>
       </div>
-    </div>
+    </main>
   )
 }
