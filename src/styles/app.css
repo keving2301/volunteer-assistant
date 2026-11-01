@@ -564,47 +564,6 @@ textarea {
   }
 }
 
-/* Phones: every control is at least 44px tall to tap. */
-
-.dialog-header .icon-button {
-  flex-shrink: 0;
-}
-
-@media (max-width: 639px) {
-  .button,
-  .button-small,
-  .input,
-  .select select,
-  .segmented button,
-  .back-link,
-  .check {
-    min-height: 44px;
-  }
-
-  .icon-button {
-    width: 44px;
-    height: 44px;
-  }
-
-  .check input {
-    width: 22px;
-    height: 22px;
-  }
-
-  .skip-link {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-  }
-
-  .table td a,
-  .contact-list a {
-    display: inline-block;
-    margin: -10px 0;
-    padding: 10px 0;
-  }
-}
-
 /* Forms */
 
 .form {
@@ -2658,5 +2617,46 @@ button.slot-empty:hover {
   .demo-access,
   .signin-form {
     padding: 16px;
+  }
+}
+
+/* Phones: every control is at least 44px tall to tap. */
+
+.dialog-header .icon-button {
+  flex-shrink: 0;
+}
+
+@media (max-width: 639px) {
+  .button,
+  .button-small,
+  .input,
+  .select select,
+  .segmented button,
+  .back-link,
+  .check {
+    min-height: 44px;
+  }
+
+  .icon-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .check input {
+    width: 22px;
+    height: 22px;
+  }
+
+  .skip-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .table td a,
+  .contact-list a {
+    display: inline-block;
+    margin: -12px 0;
+    padding: 12px 0;
   }
 }
