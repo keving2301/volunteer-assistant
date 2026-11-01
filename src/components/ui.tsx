@@ -1,8 +1,10 @@
 import { useEffect, useId, useRef, type ReactNode, type InputHTMLAttributes, type SelectHTMLAttributes } from 'react'
+import { useModalDialog } from '../lib/motion'
 import { Icon, type IconName } from './Icon'
 
 // Dialog: the native <dialog> element opened with showModal(), so focus is trapped, Escape closes it, and the rest of
-// the page is inert while it is open. On phones it fills the screen and its body scrolls on its own.
+// the page is inert while it is open. On phones it fills the screen and its body scrolls on its own. While it closes,
+// it keeps showing what it showed last, so the exit animation never runs on an empty box.
 
 export function Dialog(props: {
   open: boolean
@@ -20,18 +22,15 @@ export function Dialog(props: {
   const pressedOnBackdrop = useRef(false)
   const titleId = useId()
   const descriptionId = useId()
-
-  useEffect(() => {
-    const dialog = ref.current
-    if (!dialog) return
-    if (open && !dialog.open) dialog.showModal()
-    if (!open && dialog.open) dialog.close()
-  }, [open])
+  const { present, closing } = useModalDialog(open, ref)
+  const last = useRef({ title, description, children, footer })
+  if (open) last.current = { title, description, children, footer }
+  const shown = last.current
 
   return (
     <dialog
       ref={ref}
-      className={`dialog dialog-${size}`}
+      className={`dialog dialog-${size}${closing ? ' is-closing' : ''}`}
       aria-labelledby={titleId}
       aria-describedby={description ? descriptionId : undefined}
       onCancel={(event) => {
@@ -45,16 +44,16 @@ export function Dialog(props: {
         if (closeOnBackdrop && pressedOnBackdrop.current && event.target === ref.current) onClose()
       }}
     >
-      {open && (
+      {present && (
         <div className="dialog-panel">
           <header className="dialog-header">
             <div>
               <h2 id={titleId} className="dialog-title">
-                {title}
+                {shown.title}
               </h2>
-              {description && (
+              {shown.description && (
                 <p id={descriptionId} className="dialog-description">
-                  {description}
+                  {shown.description}
                 </p>
               )}
             </div>
@@ -62,8 +61,8 @@ export function Dialog(props: {
               <Icon name="close" />
             </button>
           </header>
-          <div className="dialog-body">{children}</div>
-          {footer && <footer className="dialog-footer">{footer}</footer>}
+          <div className="dialog-body">{shown.children}</div>
+          {shown.footer && <footer className="dialog-footer">{shown.footer}</footer>}
         </div>
       )}
     </dialog>
@@ -206,7 +205,7 @@ export function Notice({ tone = 'info', icon, children }: { tone?: 'info' | 'war
 
 export function Loading({ label = 'Loading' }: { label?: string }) {
   return (
-    <div className="state" role="status" aria-live="polite">
+    <div className="state state-loading" role="status" aria-live="polite">
       <span className="spinner" aria-hidden="true" />
       <span>{label}...</span>
     </div>
@@ -257,7 +256,7 @@ export function PageHeader({
       <div className="page-header-row">
         <div className="page-heading">
           <h1 className="page-title">{title}</h1>
-          {meta && <div className="page-meta">{meta}</div>}
+          <div className="page-meta">{meta ?? '\u00a0'}</div>
         </div>
         {actions && <div className="page-actions">{actions}</div>}
       </div>

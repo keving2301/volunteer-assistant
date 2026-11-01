@@ -50,6 +50,8 @@ export function AvailabilityPage() {
   if (me.isError) return <LoadError message={errorMessage(me.error)} onRetry={() => me.refetch()} />
   if (me.isPending || !draft) return <Loading label="Loading your availability" />
 
+  const showBar = dirty || save.isPending
+
   const submit = () =>
     save.mutate(draft, {
       onSuccess: (result) => {
@@ -60,7 +62,7 @@ export function AvailabilityPage() {
     })
 
   return (
-    <div className="page">
+    <div className="page page-with-bar">
       <PageHeader
         title="Availability"
         meta="The weekly times you can teach, Monday to Friday. Coordinators place you on a team only when you are free for the whole session plus travel time."
@@ -132,16 +134,25 @@ export function AvailabilityPage() {
         </aside>
       </div>
 
-      <div className={dirty ? 'save-bar is-dirty' : 'save-bar'}>
-        <span className="save-bar-text">{dirty ? 'You have unsaved changes.' : 'All changes saved.'}</span>
-        {save.isError && <InlineError>{errorMessage(save.error)}</InlineError>}
-        <div className="save-bar-actions">
-          <button type="button" className="button" onClick={() => setDraft(me.data!.availability)} disabled={!dirty || save.isPending}>
-            Discard
-          </button>
-          <button type="button" className="button button-primary" onClick={submit} disabled={!dirty || save.isPending}>
-            {save.isPending ? 'Saving...' : 'Save availability'}
-          </button>
+      {/* Slides in while there are unsaved changes; hidden (and out of the tab order) otherwise. */}
+      <div className={showBar ? 'save-bar is-shown' : 'save-bar'} role="region" aria-label="Unsaved changes">
+        <div className="save-bar-inner">
+          <span className="save-bar-text">{save.isPending ? 'Saving your availability' : 'You have unsaved changes.'}</span>
+          {save.isError && <InlineError>{errorMessage(save.error)}</InlineError>}
+          <div className="save-bar-actions">
+            <button type="button" className="button" onClick={() => setDraft(me.data!.availability)} disabled={save.isPending}>
+              Discard
+            </button>
+            <button
+              type="button"
+              className="button button-primary"
+              onClick={submit}
+              disabled={save.isPending}
+              aria-busy={save.isPending || undefined}
+            >
+              {save.isPending ? <span className="button-busy">Saving</span> : 'Save availability'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

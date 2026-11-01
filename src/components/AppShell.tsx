@@ -4,6 +4,7 @@ import type { Role, SessionInfo } from '../../shared/types'
 import { errorMessage } from '../api/client'
 import { useSignOut, useSwitchRole } from '../api/hooks'
 import { homeFor } from '../app/session'
+import { useModalDialog } from '../lib/motion'
 import { Icon, type IconName } from './Icon'
 import { useToast } from './Toast'
 
@@ -118,12 +119,7 @@ export function AppShell({ session, children }: { session: SessionInfo; children
   const location = useLocation()
   const main = useRef<HTMLElement>(null)
 
-  useEffect(() => {
-    const d = drawer.current
-    if (!d) return
-    if (menuOpen && !d.open) d.showModal()
-    if (!menuOpen && d.open) d.close()
-  }, [menuOpen])
+  const menu = useModalDialog(menuOpen, drawer)
 
   // A new page starts at the top, with focus on the main region for keyboard and screen reader users.
   useEffect(() => {
@@ -153,7 +149,7 @@ export function AppShell({ session, children }: { session: SessionInfo; children
 
       <dialog
         ref={drawer}
-        className="drawer"
+        className={menu.closing ? 'drawer is-closing' : 'drawer'}
         aria-label="Menu"
         onCancel={(event) => {
           event.preventDefault()
@@ -163,7 +159,7 @@ export function AppShell({ session, children }: { session: SessionInfo; children
           if (event.target === drawer.current) setMenuOpen(false)
         }}
       >
-        {menuOpen && (
+        {menu.present && (
           <div className="drawer-panel">
             <button type="button" className="drawer-close icon-button" onClick={() => setMenuOpen(false)} aria-label="Close menu">
               <Icon name="close" size={22} />

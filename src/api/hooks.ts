@@ -18,12 +18,35 @@ export const keys = {
 
 const get = async <T>(url: string, params?: Record<string, string>) => (await http.get<T>(url, { params })).data
 
+/** The server sets a readable `vas_signed_in` cookie next to the HTTP-only session. Without it there is no session to
+ * ask about, so a signed-out visitor gets the sign-in page without waiting for the API. */
+function mayHaveSession(): boolean {
+  return document.cookie.split(';').some((c) => c.trim() === 'vas_signed_in=1')
+}
+
+/** Puts a saved record into a cached list (replacing the old copy) so the page updates the moment the save returns. */
+function upsert<T extends { id: string }>(list: T[] | undefined, item: T, order: (a: T, b: T) => number): T[] | undefined {
+  if (!list) return list
+  return [...list.filter((x) => x.id !== item.id), item].sort(order)
+}
+
+function without<T extends { id: string }>(list: T[] | undefined, id: string): T[] | undefined {
+  return list?.filter((x) => x.id !== id)
+}
+
+const bySchoolName = (a: School, b: School) => a.name.localeCompare(b.name)
+const byVolunteerName = (a: Volunteer, b: Volunteer) =>
+  a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)
+const bySemesterStart = (a: Semester, b: Semester) => b.startDate.localeCompare(a.startDate)
+const byCreated = (a: Team, b: Team) => a.createdAt.localeCompare(b.createdAt)
+
 // Session
 
 export function useSession() {
   return useQuery({
     queryKey: keys.session,
     queryFn: async (): Promise<SessionInfo | null> => {
+      if (!mayHaveSession()) return null
       try {
         return await get<SessionInfo>('/session')
       } catch (error) {
@@ -96,7 +119,7 @@ export function useSaveSchool() {
   return useMutation({
     mutationFn: async ({ id, input }: { id?: string; input: SchoolInput }) =>
       id ? (await http.patch<School>(`/schools/${id}`, input)).data : (await http.post<School>('/schools', input)).data,
-    onSuccess: () => client.invalidateQueries({ queryKey: keys.schools }),
+    onSuccess: (school) => client.setQueryData<School[]>(keys.schools, (list) => upsert(list, school, bySchoolName)),
   })
 }
 
@@ -106,8 +129,8 @@ export function useDeleteSchool() {
     mutationFn: async (id: string) => {
       await http.delete(`/schools/${id}`)
     },
-    onSuccess: () => {
-      client.invalidateQueries({ queryKey: keys.schools })
+    onSuccess: (_, id) => {
+      client.setQueryData<School[]>(keys.schools, (list) => without(list, id))
       client.invalidateQueries({ queryKey: keys.allTeams })
     },
   })
@@ -120,7 +143,8 @@ export function useSaveVolunteer() {
       id
         ? (await http.patch<Volunteer>(`/volunteers/${id}`, input)).data
         : (await http.post<Volunteer>('/volunteers', input)).data,
-    onSuccess: () => client.invalidateQueries({ queryKey: keys.volunteers }),
+    onSuccess: (volunteer) =>
+      client.setQueryData<Volunteer[]>(keys.volunteers, (list) => upsert(list, volunteer, byVolunteerName)),
   })
 }
 
@@ -130,8 +154,8 @@ export function useDeleteVolunteer() {
     mutationFn: async (id: string) => {
       await http.delete(`/volunteers/${id}`)
     },
-    onSuccess: () => {
-      client.invalidateQueries({ queryKey: keys.volunteers })
+    onSuccess: (_, id) => {
+      client.setQueryData<Volunteer[]>(keys.volunteers, (list) => without(list, id))
       client.invalidateQueries({ queryKey: keys.allTeams })
     },
   })
@@ -151,7 +175,7 @@ export function useSaveTeam() {
       id
         ? (await http.patch<Team>(`/teams/${id}`, input)).data
         : (await http.post<Team>('/teams', { ...input, semesterId })).data,
-    onSuccess: (team) => client.invalidateQueries({ queryKey: keys.teams(team.semesterId) }),
+    onSuccess: (team) => client.setQueryData<Team[]>(keys.teams(team.semesterId), (list) => upsert(list, team, byCreated)),
   })
 }
 
@@ -162,7 +186,7 @@ export function useDeleteTeam() {
       await http.delete(`/teams/${team.id}`)
       return team
     },
-    onSuccess: (team) => client.invalidateQueries({ queryKey: keys.teams(team.semesterId) }),
+    onSuccess: (team) => client.setQueryData<Team[]>(keys.teams(team.semesterId), (list) => without(list, team.id)),
   })
 }
 
@@ -173,7 +197,8 @@ export function useSaveSemester() {
       id
         ? (await http.patch<Semester>(`/semesters/${id}`, input)).data
         : (await http.post<Semester>('/semesters', input)).data,
-    onSuccess: () => client.invalidateQueries({ queryKey: keys.semesters }),
+    onSuccess: (semester) =>
+      client.setQueryData<Semester[]>(keys.semesters, (list) => upsert(list, semester, bySemesterStart)),
   })
 }
 
@@ -184,7 +209,7 @@ export function useDeleteSemester() {
       await http.delete(`/semesters/${id}`)
     },
     onSuccess: (_, id) => {
-      client.invalidateQueries({ queryKey: keys.semesters })
+      client.setQueryData<Semester[]>(keys.semesters, (list) => without(list, id))
       client.removeQueries({ queryKey: keys.teams(id) })
     },
   })

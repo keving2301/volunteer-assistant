@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
+import { EXIT_MS, prefersReducedMotion } from '../lib/motion'
 import { Icon } from './Icon'
 
 type Tone = 'success' | 'error'
@@ -7,6 +8,7 @@ interface Toast {
   id: number
   message: string
   tone: Tone
+  leaving?: boolean
 }
 
 const ToastContext = createContext<(message: string, tone?: Tone) => void>(() => {})
@@ -16,7 +18,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
   const next = useRef(1)
 
-  const dismiss = useCallback((id: number) => setToasts((list) => list.filter((t) => t.id !== id)), [])
+  // Leaving toasts keep their place for the exit animation, then go.
+  const dismiss = useCallback((id: number) => {
+    setToasts((list) => list.map((t) => (t.id === id ? { ...t, leaving: true } : t)))
+    window.setTimeout(() => setToasts((list) => list.filter((t) => t.id !== id)), prefersReducedMotion() ? 0 : EXIT_MS)
+  }, [])
 
   const show = useCallback(
     (message: string, tone: Tone = 'success') => {
@@ -34,7 +40,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       <div className="toasts" role="status" aria-live="polite">
         {toasts.map((t) => (
-          <div key={t.id} className={`toast toast-${t.tone}`}>
+          <div key={t.id} className={`toast toast-${t.tone}${t.leaving ? ' is-leaving' : ''}`}>
             <Icon name={t.tone === 'success' ? 'check' : 'alert'} size={16} />
             <span>{t.message}</span>
             <button type="button" className="toast-close" onClick={() => dismiss(t.id)} aria-label="Dismiss">
