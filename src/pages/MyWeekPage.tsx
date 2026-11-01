@@ -116,7 +116,7 @@ export function MyWeekPage() {
                               <p className="visit-line">
                                 <Icon name="phone" size={15} />
                                 {t.school.contact.name}
-                                {t.school.contact.title ? ` (${t.school.contact.title})` : ''}, {t.school.contact.phone}
+                                {t.school.contact.title ? ` (${t.school.contact.title})` : ''}, <span className="nowrap">{t.school.contact.phone}</span>
                               </p>
                               {t.team.notes && <p className="visit-notes">{t.team.notes}</p>}
                               {uncovered && (

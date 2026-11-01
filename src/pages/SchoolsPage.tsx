@@ -150,7 +150,7 @@ export function SchoolsPage() {
                   </td>
                   <td data-label="Contact">
                     <div>{school.contact.name}</div>
-                    <div className="cell-sub">{school.contact.phone}</div>
+                    <div className="cell-sub nowrap">{school.contact.phone}</div>
                   </td>
                   <td className="cell-actions">
                     <button type="button" className="button button-small" onClick={() => setEditing(school)}>

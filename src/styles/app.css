@@ -116,6 +116,10 @@ textarea {
   color: var(--text-3);
 }
 
+.nowrap {
+  white-space: nowrap;
+}
+
 .icon {
   flex-shrink: 0;
 }
