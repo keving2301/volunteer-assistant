@@ -6,6 +6,10 @@ import { isValidIsoDate, daysBetween } from './calendar'
 import { normalizeRanges, overlaps, type TimeRange } from './time'
 import { GRADE_BANDS } from './types'
 
+// Zod 4 compiles fast validators with `new Function` when it can, and probes for it once. The site's content security
+// policy forbids eval, and the probe shows up as a violation in the console, so validation runs without compiling.
+z.config({ jitless: true })
+
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
 const text = (label: string, min: number, max: number) =>
