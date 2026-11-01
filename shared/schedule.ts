@@ -100,9 +100,18 @@ export interface Candidate {
 const byName = (a: Volunteer, b: Volunteer) =>
   a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName)
 
+/** How close an unavailable volunteer is to fitting: a clash with another team first, then some free time that day,
+ * then no time that day at all. */
+function closeness(reasons: readonly Reason[]): number {
+  if (reasons.some((r) => r.kind === 'travel' || r.kind === 'double_booked')) return 0
+  if (reasons.some((r) => r.kind === 'not_free' && r.message.startsWith('Free '))) return 1
+  return 2
+}
+
 /**
  * Splits volunteers into those who can take the session and those who cannot (with the reasons). Available
- * volunteers with the fewest teams come first, so the work is spread across the group.
+ * volunteers with the fewest teams come first, so the work is spread across the group; unavailable ones are listed
+ * from the closest to fitting, so a coordinator sees first whom a small change would free up.
  */
 export function rankCandidates(volunteers: readonly Volunteer[], target: Placement, ctx: ScheduleContext) {
   const available: Candidate[] = []
@@ -113,7 +122,7 @@ export function rankCandidates(volunteers: readonly Volunteer[], target: Placeme
     ;(reasons.length ? unavailable : available).push({ volunteer, teamCount, reasons })
   }
   available.sort((a, b) => a.teamCount - b.teamCount || byName(a.volunteer, b.volunteer))
-  unavailable.sort((a, b) => byName(a.volunteer, b.volunteer))
+  unavailable.sort((a, b) => closeness(a.reasons) - closeness(b.reasons) || byName(a.volunteer, b.volunteer))
   return { available, unavailable }
 }
 

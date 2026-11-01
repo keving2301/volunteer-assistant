@@ -160,6 +160,20 @@ describe('ranking candidates', () => {
     expect(result.unavailable.map((c) => c.volunteer.id)).toEqual(['away'])
     expect(result.unavailable[0].reasons[0].kind).toBe('not_free')
   })
+
+  it('lists the unavailable closest to fitting first: clashes, then partly free, then not free that day', () => {
+    const volunteers = [
+      volunteer('away', [], 'Ann'),
+      volunteer('partly', [{ day: 2, start: 960, end: 1080 }], 'Bea'),
+      volunteer('clash', [{ day: 2, start: 780, end: 1080 }], 'Cy'),
+    ]
+    const result = rankCandidates(volunteers, lakesideTuesday, {
+      schools,
+      teams: [team('t1', 'harbor', 'tue', ['clash'])],
+      bufferMinutes: 30,
+    })
+    expect(result.unavailable.map((c) => c.volunteer.id)).toEqual(['clash', 'partly', 'away'])
+  })
 })
 
 describe('team rules', () => {

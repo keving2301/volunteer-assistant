@@ -40,9 +40,11 @@ export function MyWeekPage() {
             <button type="button" className="icon-button bordered" onClick={() => setWeekOffset((w) => w - 1)} aria-label="Previous week">
               <Icon name="chevronLeft" />
             </button>
-            <button type="button" className="button" onClick={() => setWeekOffset(0)} disabled={weekOffset === 0}>
-              Today
-            </button>
+            {weekOffset !== 0 && (
+              <button type="button" className="button" onClick={() => setWeekOffset(0)}>
+                Today
+              </button>
+            )}
             <button type="button" className="icon-button bordered" onClick={() => setWeekOffset((w) => w + 1)} aria-label="Next week">
               <Icon name="chevronRight" />
             </button>
